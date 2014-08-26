@@ -6,8 +6,6 @@ package org.noamichael.utils;
  * @param <T>
  */
 public interface Unit<T extends Enum> {
-
-    public String getStringValue();
     
     public T getValue();
 
