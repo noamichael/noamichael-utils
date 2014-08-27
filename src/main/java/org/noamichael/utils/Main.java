@@ -11,6 +11,6 @@ public class Main {
         demensions.addValue(Dimension.Units.Imperial.FEET, 5);
         demensions.addValue(Dimension.Units.Imperial.YARDS, 3);
         demensions.addValue(Dimension.Units.Imperial.INCHES, 100);
-        System.out.println(demensions.getDoubleValue(Dimension.Units.Imperial.INCHES));
-    }
-}
+        System.out.println(demensions.getDoubleValue(Dimension.Units.Metric.KILOMETER));
+            }
+        }

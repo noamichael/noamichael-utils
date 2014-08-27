@@ -10,35 +10,56 @@ import org.noamichael.utils.Dimension.Units.Metric;
  */
 public class Dimension implements Serializable {
 
-    private double footValue;
-
     private double meterValue;
 
     @FunctionalInterface
     public interface ConversionOperation {
 
+        /**
+         * Converts the value to the unit indicated by the Java variable name of
+         * the operation.
+         *
+         * @param value The value to convert.
+         * @return The converted value.
+         */
         double convertValue(double value);
     }
 
+    /**
+     * Inches
+     */
     public static final ConversionOperation FEET_TO_INCHES = (value) -> value * 12;
     public static final ConversionOperation YARDS_TO_INCHES = (value) -> value * 36;
     public static final ConversionOperation METER_TO_INCHES = (value) -> value * 39.3701;
-
+    /**
+     * Feet
+     */
     public static final ConversionOperation INCHES_TO_FEET = (value) -> value / 12;
     public static final ConversionOperation YARDS_TO_FEET = (value) -> value * 3;
     public static final ConversionOperation METERS_TO_FEET = (value) -> value * 3.28084;
-
+    /**
+     * Yards
+     */
     public static final ConversionOperation INCHES_TO_YARDS = (value) -> value / 36;
     public static final ConversionOperation FEET_TO_YARDS = (value) -> value / 3;
     public static final ConversionOperation METERS_TO_YARDS = (value) -> value * 1.09361;
-
+    /**
+     * Meters
+     */
     public static final ConversionOperation INCHES_TO_METERS = (value) -> value * 0.0254;
-    public static final ConversionOperation FEET_TO_METERS = (value) -> value / 12;
+    public static final ConversionOperation FEET_TO_METERS = (value) -> value * 0.3048;
     public static final ConversionOperation YARDS_TO_METERS = (value) -> value * 0.9144;
+    public static final ConversionOperation KILOMETERS_TO_METERS = (value) -> value * 1000;
+
+    /**
+     * Kilometers
+     */
+    public static final ConversionOperation METERS_TO_KILOMETERS = (value) -> value / 1000;
 
     public Dimension() {
     }
 
+    @SuppressWarnings("OverridableMethodCallInConstructor")
     public Dimension(UnitValue... args) {
         for (UnitValue unitValue : args) {
             this.addValue(unitValue.getUnit(), unitValue.getValue());
@@ -72,7 +93,8 @@ public class Dimension implements Serializable {
 
         public enum Metric implements Unit<Metric> {
 
-            METER("Meter");
+            METER("Meter"),
+            KILOMETER("Kilometer");
             private final String toString;
 
             private Metric(String toString) {
@@ -120,15 +142,15 @@ public class Dimension implements Serializable {
         }
         switch (unit) {
             case INCHES: {
-                this.footValue += INCHES_TO_FEET.convertValue(value);
+                this.meterValue += INCHES_TO_METERS.convertValue(value);
                 break;
             }
             case FEET: {
-                this.footValue += value;
+                this.meterValue += FEET_TO_METERS.convertValue(value);
                 break;
             }
             case YARDS: {
-                this.footValue += YARDS_TO_FEET.convertValue(value);
+                this.meterValue += YARDS_TO_METERS.convertValue(value);
                 break;
             }
             default: {
@@ -136,6 +158,10 @@ public class Dimension implements Serializable {
 
             }
         }
+    }
+
+    public void clear() {
+        this.meterValue = 0.0d;
     }
 
     private void addValue(Units.Metric unit, double value) {
@@ -147,7 +173,10 @@ public class Dimension implements Serializable {
                 this.meterValue += value;
                 break;
             }
-
+            case KILOMETER: {
+                this.meterValue += KILOMETERS_TO_METERS.convertValue(value);
+                break;
+            }
             default: {
                 throw new DimensionException(String.format("Null is an unknown unit.", unit.getClass().getName()));
 
@@ -156,30 +185,33 @@ public class Dimension implements Serializable {
     }
 
     private double getDoubleValue(Units.Imperial unit) {
-        double runningValue = 0;
         switch (unit) {
             case INCHES: {
-                runningValue += FEET_TO_INCHES.convertValue(footValue);
-                runningValue += METER_TO_INCHES.convertValue(meterValue);
-                return runningValue;
+                return METER_TO_INCHES.convertValue(meterValue);
             }
             case FEET: {
-                runningValue += footValue;
-                runningValue += METERS_TO_FEET.convertValue(meterValue);
-                return runningValue;
+                return METERS_TO_FEET.convertValue(meterValue);
             }
-            case YARDS: {
-                runningValue += FEET_TO_YARDS.convertValue(footValue);
-                runningValue += METERS_TO_YARDS.convertValue(meterValue);
-                return runningValue;
+            case YARDS: {;
+                return METERS_TO_YARDS.convertValue(meterValue);
             }
             default: {
-                throw new DimensionException(String.format("Null is an unknown unit.", unit.getClass().getName()));
+                throw new DimensionException(String.format("{$s is an unknown imperial unit.", unit.getClass().getName()));
             }
         }
     }
 
     private double getDoubleValue(Units.Metric unit) {
-        throw new UnsupportedOperationException("Not yet Supported");
+        switch (unit) {
+            case METER: {
+                return meterValue;
+            }
+            case KILOMETER: {
+                return METERS_TO_KILOMETERS.convertValue(meterValue);
+            }
+            default: {
+                throw new DimensionException(String.format("[%s] is an unknown metric unit.", unit.getClass().getName()));
+            }
+        }
     }
 }
