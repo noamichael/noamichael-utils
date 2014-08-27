@@ -1,8 +1,6 @@
-package org.noamichael.utils;
+package org.noamichael.utils.measurement;
 
 import java.io.Serializable;
-import org.noamichael.utils.Dimension.Units.Imperial;
-import org.noamichael.utils.Dimension.Units.Metric;
 
 /**
  *
@@ -44,11 +42,16 @@ public class Dimension implements Serializable {
     public static final ConversionOperation FEET_TO_YARDS = (value) -> value / 3;
     public static final ConversionOperation METERS_TO_YARDS = (value) -> value * 1.09361;
     /**
+     * Miles
+     */
+    public static final ConversionOperation METERS_TO_MILES = (value) -> value / 1609.34;
+    /**
      * Meters
      */
     public static final ConversionOperation INCHES_TO_METERS = (value) -> value * 0.0254;
     public static final ConversionOperation FEET_TO_METERS = (value) -> value * 0.3048;
     public static final ConversionOperation YARDS_TO_METERS = (value) -> value * 0.9144;
+    public static final ConversionOperation MILES_TO_METERS = (value) -> value / 1609.34;
     public static final ConversionOperation KILOMETERS_TO_METERS = (value) -> value * 1000;
 
     /**
@@ -66,13 +69,12 @@ public class Dimension implements Serializable {
         }
     }
 
-    public static class Units {
-
         public enum Imperial implements Unit<Imperial> {
 
             INCHES("Inches"),
             FEET("Feet"),
-            YARDS("Yards");
+            YARDS("Yards"),
+            MILES("MILES");
             private final String toString;
 
             private Imperial(String toString) {
@@ -111,7 +113,6 @@ public class Dimension implements Serializable {
                 return this;
             }
         }
-    }
 
     public void addValue(Unit<?> unit, double value) {
         if (unit == null) {
@@ -136,7 +137,7 @@ public class Dimension implements Serializable {
         throw new DimensionException("Unknown unit");
     }
 
-    private void addValue(Units.Imperial unit, double value) {
+    private void addValue(Imperial unit, double value) {
         if (unit == null) {
             throw new DimensionException("Null is an unknown unit.");
         }
@@ -153,8 +154,11 @@ public class Dimension implements Serializable {
                 this.meterValue += YARDS_TO_METERS.convertValue(value);
                 break;
             }
+            case MILES: {
+                this.meterValue += MILES_TO_METERS.convertValue(value);
+            }
             default: {
-                throw new DimensionException(String.format("Null is an unknown unit.", unit.getClass().getName()));
+                throw new DimensionException(String.format("[%s] is an unknown imperial unit.", unit.getClass().getName()));
 
             }
         }
@@ -164,7 +168,7 @@ public class Dimension implements Serializable {
         this.meterValue = 0.0d;
     }
 
-    private void addValue(Units.Metric unit, double value) {
+    private void addValue(Metric unit, double value) {
         if (unit == null) {
             throw new DimensionException("Null is an unknown unit.");
         }
@@ -178,13 +182,13 @@ public class Dimension implements Serializable {
                 break;
             }
             default: {
-                throw new DimensionException(String.format("Null is an unknown unit.", unit.getClass().getName()));
+                throw new DimensionException(String.format("[%s] is an unknown metric unit.", unit.getClass().getName()));
 
             }
         }
     }
 
-    private double getDoubleValue(Units.Imperial unit) {
+    private double getDoubleValue(Imperial unit) {
         switch (unit) {
             case INCHES: {
                 return METER_TO_INCHES.convertValue(meterValue);
@@ -195,13 +199,16 @@ public class Dimension implements Serializable {
             case YARDS: {;
                 return METERS_TO_YARDS.convertValue(meterValue);
             }
+            case MILES: {
+                return METERS_TO_MILES.convertValue(meterValue);
+            }
             default: {
-                throw new DimensionException(String.format("{$s is an unknown imperial unit.", unit.getClass().getName()));
+                throw new DimensionException(String.format("[%s] is an unknown imperial unit.", unit.getClass().getName()));
             }
         }
     }
 
-    private double getDoubleValue(Units.Metric unit) {
+    private double getDoubleValue(Metric unit) {
         switch (unit) {
             case METER: {
                 return meterValue;

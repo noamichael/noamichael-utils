@@ -1,4 +1,4 @@
-package org.noamichael.utils;
+package org.noamichael.utils.measurement;
 
 /**
  *
