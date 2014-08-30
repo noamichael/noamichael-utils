@@ -156,6 +156,7 @@ public class Dimension implements Serializable {
             }
             case MILES: {
                 this.meterValue += MILES_TO_METERS.convertValue(value);
+                break;
             }
             default: {
                 throw new DimensionException(String.format("[%s] is an unknown imperial unit.", unit.getClass().getName()));

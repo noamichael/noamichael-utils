@@ -2,6 +2,7 @@ package org.noamichael.utils.jsf;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import static org.noamichael.utils.se.ObjectUtil.newInstance;
 
 /**
  *
@@ -15,7 +16,7 @@ public final class JSFFunctions {
     }
 
     public static Object createObject(String name) throws Exception {
-        return Class.forName(name).getConstructor().newInstance();
+        return newInstance(Class.forName(name));
     }
 
 }

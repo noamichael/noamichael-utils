@@ -7,10 +7,11 @@ package org.noamichael.utils.measurement;
 public class Main {
 
     public static void main(String[] args) {
-        Dimension demensions = new Dimension();
-        demensions.addValue(Dimension.Imperial.FEET, 5);
-        demensions.addValue(Dimension.Imperial.YARDS, 3);
-        demensions.addValue(Dimension.Imperial.INCHES, 100);
-        System.out.println(demensions.getDoubleValue(Dimension.Imperial.MILES));
-            }
-        }
+        Dimension dimensions = new Dimension();
+        dimensions.addValue(Dimension.Imperial.FEET, 5);
+        dimensions.addValue(Dimension.Imperial.YARDS, 3);
+        dimensions.addValue(Dimension.Imperial.INCHES, 100);
+        Dimension dimension2 = new Dimension();
+        dimension2.addValue(Dimension.Imperial.MILES, 3);
+    }
+}
