@@ -14,7 +14,7 @@ public class ObjectUtil {
 
     /**
      * Returns a new instance of the object represented by the class by invoking
-     * the no-arg constructor (if public). In the event that the constuctor is
+     * the no-arg constructor (if public). In the event that the constructor is
      * not available, returns null.
      *
      * @param <T> The object type.
@@ -39,7 +39,8 @@ public class ObjectUtil {
      * @param oldObject The old Object
      * @param newObject The new Object
      * @return A List of {@link ChangedValue}
-     * @throws RuntimeException 
+     * @throws RuntimeException
+     * @throws NullPointerException
      */
     public static List<ChangedValue> getChangedValues(Object oldObject, Object newObject) {
         if (!oldObject.getClass().equals(newObject.getClass())) {
