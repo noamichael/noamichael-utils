@@ -8,12 +8,16 @@ import java.util.Map;
  * @author michael
  */
 public interface XmlElement {
+    
+    public String getName();
 
     public Map<String, String> getAttributes();
 
     public String getValue();
 
     public List<XmlElement> getChildren();
+    
+    public XmlElement setName(String name);
     
     public XmlElement getParent();
 

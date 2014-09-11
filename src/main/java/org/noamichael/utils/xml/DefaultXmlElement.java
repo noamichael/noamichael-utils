@@ -14,10 +14,15 @@ public class DefaultXmlElement implements XmlElement {
     private XmlElement parent;
     private List<XmlElement> children;
     private String value;
+    private String name;
 
     public DefaultXmlElement() {
     }
 
+    @Override
+    public String getName() {
+        return name;
+    }
 
     @Override
     public Map<String, String> getAttributes() {
@@ -62,5 +67,18 @@ public class DefaultXmlElement implements XmlElement {
         this.parent = parent;
         return this;
     }
+
+    @Override
+    public XmlElement setName(String name) {
+        this.name = name;
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultXmlElement{" + "attributes=" + attributes + ", parent=" + parent + ", children=" + children + ", value=" + value + ", name=" + name + '}';
+    }
+    
+    
 
 }
