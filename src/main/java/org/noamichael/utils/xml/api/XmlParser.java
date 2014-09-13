@@ -6,6 +6,11 @@ package org.noamichael.utils.xml.api;
  */
 public interface XmlParser {
     
+    /**
+     * Returns the {@link ParsedXmlDocument} of the given string.
+     * @param rawXml
+     * @return 
+     */
     public ParsedXmlDocument getParsedXmlDocument(String rawXml);
     
     

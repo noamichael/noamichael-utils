@@ -2,6 +2,7 @@ package org.noamichael.utils.measurement;
 
 import org.noamichael.utils.xml.DefaultXmlParserImpl;
 import org.noamichael.utils.xml.api.ParsedXmlDocument;
+import org.noamichael.utils.xml.api.XmlElement;
 import org.noamichael.utils.xml.api.XmlParser;
 
 /**
@@ -11,61 +12,20 @@ import org.noamichael.utils.xml.api.XmlParser;
 public class Main {
 
     public static void main(String[] args) {
-        Dimension dimensions = new Dimension();
-        dimensions.addValue(Dimension.Imperial.FEET, 5);
-        dimensions.addValue(Dimension.Imperial.YARDS, 3);
-        dimensions.addValue(Dimension.Imperial.INCHES, 100);
-        Dimension dimension2 = new Dimension();
-        dimension2.addValue(Dimension.Imperial.MILES, 3);
         XmlParser xmlParser = new DefaultXmlParserImpl();
-        ParsedXmlDocument parsedXmlDocument = xmlParser.getParsedXmlDocument("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                + "<actions>\n"
-                + "        <action>\n"
-                + "            <actionName>run</actionName>\n"
-                + "            <packagings>\n"
-                + "                <packaging>jar</packaging>\n"
-                + "            </packagings>\n"
-                + "            <goals>\n"
-                + "                <goal>process-classes</goal>\n"
-                + "                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>\n"
-                + "            </goals>\n"
-                + "            <properties>\n"
-                + "                <exec.args>-classpath %classpath org.noamichael.utils.measurement.Main</exec.args>\n"
-                + "                <exec.executable>java</exec.executable>\n"
-                + "            </properties>\n"
-                + "        </action>\n"
-                + "        <action>\n"
-                + "            <actionName>debug</actionName>\n"
-                + "            <packagings>\n"
-                + "                <packaging>jar</packaging>\n"
-                + "            </packagings>\n"
-                + "            <goals>\n"
-                + "                <goal>process-classes</goal>\n"
-                + "                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>\n"
-                + "            </goals>\n"
-                + "            <properties>\n"
-                + "                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath org.noamichael.utils.measurement.Main</exec.args>\n"
-                + "                <exec.executable>java</exec.executable>\n"
-                + "                <jpda.listen>true</jpda.listen>\n"
-                + "            </properties>\n"
-                + "        </action>\n"
-                + "        <action>\n"
-                + "            <actionName>profile</actionName>\n"
-                + "            <packagings>\n"
-                + "                <packaging>jar</packaging>\n"
-                + "            </packagings>\n"
-                + "            <goals>\n"
-                + "                <goal>process-classes</goal>\n"
-                + "                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>\n"
-                + "            </goals>\n"
-                + "            <properties>\n"
-                + "                <exec.args>-classpath %classpath org.noamichael.utils.measurement.Main</exec.args>\n"
-                + "                <exec.executable>java</exec.executable>\n"
-                + "            </properties>\n"
-                + "        </action>\n"
-                + "    </actions>\n"
-                + "");
-        System.out.println(parsedXmlDocument.getElement("actions").get(0));
+        ParsedXmlDocument parsedXmlDocument = xmlParser.getParsedXmlDocument("<web-app version=\"3.1\" xsi:schemaLocation=\"http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd\"><context-param><param-name>javax.faces.PROJECT_STAGE</param-name><param-value>Development</param-value></context-param><servlet><servlet-name>Faces Servlet</servlet-name><servlet-class>javax.faces.webapp.FacesServlet</servlet-class><load-on-startup>1</load-on-startup></servlet><servlet-mapping><servlet-name>Faces Servlet</servlet-name><url-pattern>*.xhtml</url-pattern></servlet-mapping><session-config><session-timeout>\n"
+                + "            30\n"
+                + "        </session-timeout></session-config><welcome-file-list><welcome-file test=\"yes\">index.xhtml</welcome-file></welcome-file-list></web-app>");
+        XmlElement xmlElement = parsedXmlDocument.getRootElement();
+        printXmlTree(xmlElement);
+    }
 
+    public static void printXmlTree(XmlElement element) {
+        for(XmlElement xmlElement: element.getChildren()){
+            printXmlTree(xmlElement);
+        }
+        System.out.println(element.getName());
+        System.out.println("    "+element.getAttributes());
+        System.out.println("        "+element.getValue());
     }
 }

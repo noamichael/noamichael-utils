@@ -44,12 +44,8 @@ public class DefaultXmlParserImpl implements XmlParser {
             if (semiParsedElement.getParent() != null) {
                 System.out.println("    " + semiParsedElement.getParent().tagName);
             }
-            if (!semiParsedElement.getChildren().isEmpty()) {
-                document.putElement(createElementWithChildren(semiParsedElement, semiParsedElement.children));
-            } else {
-                if (document.getElement(semiParsedElement.tagName) == null) {
-                    document.putElement(createElement(semiParsedElement));
-                }
+            if (!semiParsedElement.children.isEmpty()) {
+                document.putElement(createElementWithChildren(semiParsedElement));
             }
         }
         return document;
@@ -63,16 +59,18 @@ public class DefaultXmlParserImpl implements XmlParser {
         return xmlElement;
     }
 
-    private XmlElement createElementWithChildren(SemiParsedElement parent, List<SemiParsedElement> children) {
-        XmlElement parentXmlElement = createElement(parent);
-        for (SemiParsedElement parsedElement : children) {
-            XmlElement childXmlElement = createElement(parsedElement);
-            childXmlElement.setParent(parentXmlElement);
-            document.putElement(childXmlElement);
-            parentXmlElement.getChildren().add(childXmlElement);
+    private XmlElement createElementWithChildren(SemiParsedElement parent) {
+        List<XmlElement> children = new ArrayList<>();
+        XmlElement xmlElement = createElement(parent);
+        for (SemiParsedElement semiParsedElement : parent.getChildren()) {
+            XmlElement element = createElementWithChildren(semiParsedElement);
+            element.setParent(xmlElement);
+            document.putElement(element);
+            children.add(element);
         }
+        xmlElement.setChildren(children);
+        return xmlElement;
 
-        return parentXmlElement;
     }
 
     private void collectTags(char[] rawData, List<SemiParsedElement> list) {
@@ -132,10 +130,6 @@ public class DefaultXmlParserImpl implements XmlParser {
         return nextElement;
     }
 
-    public boolean containsMoreElements(String data) {
-        return containsChildren(data);
-    }
-
     private Map<String, String> readAttributes(String string) {
         Map<String, String> attributes = new HashMap<>();
         string = string.replace("\"", "").trim();
@@ -181,6 +175,38 @@ public class DefaultXmlParserImpl implements XmlParser {
         return new int[]{beginTagPosition, endTagPosition};
     }
 
+    private boolean isCData(String s) {
+        int i = 0;
+        while (i < CDATA_START.length()) {
+            char currentXmlChar = s.charAt(i);
+            char currentCDataChar = CDATA_START.charAt(i);
+            if (currentXmlChar != currentCDataChar) {
+                return false;
+            }
+            i++;
+        }
+        return true;
+    }
+
+    private int increaseIndexIfCData(char[] rawData, int currentXmlPosition) {
+        int i = currentXmlPosition;
+        int currentCDataIndex = 0;
+        while (i < rawData.length) {
+            if (currentCDataIndex >= CDATA_END.length()) {
+                return i;
+            }
+            char currentCDataEnd = CDATA_END.charAt(currentCDataIndex);
+            char currentXml = rawData[i];
+            if (currentCDataEnd == currentXml) {
+                currentCDataIndex++;
+            } else {
+                currentCDataIndex = 0;
+            }
+            i++;
+        }
+        return i - 1;
+    }
+
     private int[] getEndTagPositions(char[] rawData, String tagName) {
         int beginTagPosition = String.valueOf(rawData).indexOf("</" + tagName + ">");
         int endTagPosition = beginTagPosition + tagName.length() + 2;
@@ -207,7 +233,7 @@ public class DefaultXmlParserImpl implements XmlParser {
     }
 
     public boolean containsChildren(String data) {
-        return data.contains("<") || data.contains(">");
+        return data.contains("<") && data.contains(">") && !isCData(data);
     }
 
     public boolean isEmpty(char[] data) {

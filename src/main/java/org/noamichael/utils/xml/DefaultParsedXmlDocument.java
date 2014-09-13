@@ -26,6 +26,10 @@ public class DefaultParsedXmlDocument implements ParsedXmlDocument {
         return rootElement;
     }
 
+    /**
+     * Adds the given element to this document
+     * @param value 
+     */
     public void putElement(XmlElement value) {
         List<XmlElement> currentElements = elements.get(value.getName());
         if (currentElements == null) {
