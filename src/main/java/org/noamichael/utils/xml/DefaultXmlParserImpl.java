@@ -15,7 +15,7 @@ public class DefaultXmlParserImpl implements XmlParser {
     private static final String CDATA_END = "]]>";
 
     private DefaultParsedXmlDocument document;
-    private XmlElement currentParentElement;
+    private SemiParsedElement currentParentElement;
 
     protected enum CharType {
 
@@ -29,24 +29,38 @@ public class DefaultXmlParserImpl implements XmlParser {
 
     @Override
     public ParsedXmlDocument getParsedXmlDocument(String rawXml) {
+        System.out.println("Hello world");
         if (isNullOrEmpty(rawXml)) {
             throw new ParseException("Cannot parse null or empty xml.");
         }
         document = new DefaultParsedXmlDocument();
         List<SemiParsedElement> semiParsedElements = new ArrayList();
+        rawXml = rawXml.replace("\n", "");
         collectTags(rawXml.toCharArray(), semiParsedElements);
-        for (SemiParsedElement semiParsedElement : semiParsedElements) {
-            if (!containsChildren(semiParsedElement.innerContent)) {
-                XmlElement element = new DefaultXmlElement();
-                element.setValue(semiParsedElement.innerContent);
-                element.setName(semiParsedElement.tagName);
-                System.out.println(element);
+        semiParsedElements.stream().forEach((semiParsedElement) -> {
+            if(semiParsedElement.getChildren().isEmpty()){
+                document.putElement(createElementWithChildren(semiParsedElement, semiParsedElement.children));
+            }else{
+                document.putElement(createElement(semiParsedElement));
             }
-        }
-
+        });
         return document;
     }
 
+    private XmlElement createElement(SemiParsedElement child){
+        XmlElement xmlElement = new DefaultXmlElement();
+        xmlElement.setName(child.getTagName());
+        xmlElement.setValue(child.getInnerContent());
+        return xmlElement;
+    }
+    private XmlElement createElementWithChildren(SemiParsedElement parent, List<SemiParsedElement> children){
+        XmlElement parentXmlElement = createElement(parent);
+        children.stream().map((child) -> createElement(child)).forEach((childXmlElement) -> {
+            childXmlElement.setParent(parentXmlElement);
+        });
+        return parentXmlElement;
+    }
+    
     private void collectTags(char[] rawData, List<SemiParsedElement> list) {
         collectTags(rawData, list, null);
 
@@ -57,11 +71,35 @@ public class DefaultXmlParserImpl implements XmlParser {
             return;
         }
         String rawString = String.valueOf(rawData);
+        String currentContentToParse = rawString;
+        if (containsChildren(currentContentToParse)) {
+            SemiParsedElement firstElement = getNextTag(rawString, null);
+            currentParentElement = firstElement;
+            list.add(firstElement);
+            currentContentToParse = firstElement.innerContent;
+        }
+        SemiParsedElement nextTag;
 
+        while (!currentContentToParse.isEmpty()) {
+            nextTag = getNextTag(currentContentToParse, currentParentElement);
+            if (containsChildren(nextTag.innerContent)) {
+                collectTags(currentContentToParse.toCharArray(), list, parent);
+            }
+            list.add(nextTag);
+            currentContentToParse = currentContentToParse.substring(nextTag.endTagEnd + 1, currentContentToParse.length()).trim();
+        }
+
+    }
+
+    public SemiParsedElement getNextTag(String rawString, SemiParsedElement parent) {
+        char[] rawData = rawString.toCharArray();
         SemiParsedElement nextElement = new SemiParsedElement();
         int[] beginTagPositions = getStartTagPositions(rawData);
         String foundTag = getTagName(rawString.substring(beginTagPositions[0], beginTagPositions[1]).toCharArray());
         int[] endTagPositions = getEndTagPositions(rawData, foundTag);
+        if (parent != null) {
+            parent.getChildren().add(nextElement);
+        }
         nextElement.setParent(parent);
         nextElement.setStartTagBegin(beginTagPositions[0]);
         nextElement.setStartTagEnd(beginTagPositions[1]);
@@ -69,17 +107,7 @@ public class DefaultXmlParserImpl implements XmlParser {
         nextElement.setEndTagEnd(endTagPositions[1]);
         nextElement.setTagName(foundTag);
         nextElement.setInnerContent(rawString.substring(beginTagPositions[1] + 1, endTagPositions[0]));
-        list.add(nextElement);
-        System.out.println(nextElement);
-        if (containsChildren(nextElement.innerContent)) {
-            collectTags(nextElement.innerContent.toCharArray(), list, nextElement);
-        } else if (nextElement.endTagEnd < rawString.length()) {
-            collectTags(rawString.substring(nextElement.endTagEnd + 1, rawString.length()).toCharArray(), list);
-        }
-        if (containsMoreElements(rawString.substring(nextElement.endTagEnd + 1, rawString.length()))) {
-            collectTags(rawString.substring(nextElement.endTagEnd + 1, rawString.length()).toCharArray(), list, parent);
-        }
-
+        return nextElement;
     }
 
     public boolean containsMoreElements(String data) {
@@ -187,6 +215,7 @@ public class DefaultXmlParserImpl implements XmlParser {
     protected class SemiParsedElement {
 
         private SemiParsedElement parent;
+        private List<SemiParsedElement> children = new ArrayList<>();
         private int startTagBegin;
         private int startTagEnd;
         private int endTagBegin;
@@ -295,6 +324,20 @@ public class DefaultXmlParserImpl implements XmlParser {
          */
         public void setParent(SemiParsedElement parent) {
             this.parent = parent;
+        }
+
+        /**
+         * @return the children
+         */
+        public List<SemiParsedElement> getChildren() {
+            return children;
+        }
+
+        /**
+         * @param children the children to set
+         */
+        public void setChildren(List<SemiParsedElement> children) {
+            this.children = children;
         }
 
     }
