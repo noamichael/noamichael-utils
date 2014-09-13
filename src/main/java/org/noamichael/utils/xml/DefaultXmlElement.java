@@ -1,5 +1,7 @@
 package org.noamichael.utils.xml;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.noamichael.utils.xml.api.XmlElement;
@@ -17,6 +19,8 @@ public class DefaultXmlElement implements XmlElement {
     private String name;
 
     public DefaultXmlElement() {
+        this.attributes = new HashMap();
+        this.children = new ArrayList<>();
     }
 
     @Override
@@ -76,7 +80,7 @@ public class DefaultXmlElement implements XmlElement {
 
     @Override
     public String toString() {
-        return "DefaultXmlElement{" + "attributes=" + attributes + ", parent=" + parent + ", children=" + children + ", value=" + value + ", name=" + name + '}';
+        return "DefaultXmlElement{"+"name="+name + ", attributes=" + attributes + ", parent=" + (parent == null ? "null" : parent.getName()) + ", children=" + children.size() + ", value=" + value +'}';
     }
     
     

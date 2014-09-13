@@ -1,6 +1,6 @@
 package org.noamichael.utils.xml.api;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  *
@@ -8,8 +8,8 @@ import java.util.Map;
  */
 public interface ParsedXmlDocument {
     
-    public XmlElement getElement(String name);    
+    public List<XmlElement> getElement(String name);    
     
-    public Map<String, String> getAttributes(String elementName);
-    
+    public XmlElement getRootElement();
+      
 }
