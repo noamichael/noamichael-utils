@@ -13,7 +13,7 @@ import java.util.function.Predicate;
  *
  * @author Michael
  */
-public class ClassPathScanner {
+public abstract class ClassPathScanner {
 
     public static final String CLASS_FOLDER_NAME = "\\classes\\";
     public static final String FOLDER_SEPARATOR = "\\";
@@ -33,7 +33,7 @@ public class ClassPathScanner {
     public static void scanForAnnotationAtFolder(Class<? extends Annotation> annotation, String startingFolder, ElementType... elementTypes) {
         File file = new File(startingFolder);
         List<File> foundClassFiles = new ArrayList();
-        List<Class<?>> annotatedClasses = new ArrayList();
+        List<ScannerSearchResult> annotatedClasses = new ArrayList();
         recursivelyTraverseFile(file, FILE_IS_CLASS, foundClassFiles);
         for (File foundFile : foundClassFiles) {
             String packageName = getPackageNameFromPath(foundFile.getPath());
@@ -44,26 +44,29 @@ public class ClassPathScanner {
                     for (ElementType elementType : elementTypes) {
                         switch (elementType) {
                             case CONSTRUCTOR: {
-                                if (isAnnotationPresent(annotation, c.getDeclaredConstructors())) {
-                                    annotatedClasses.add(c);
+                                AccessibleObject result = isAnnotationPresent(annotation, c.getDeclaredConstructors());
+                                if (result != null) {
+                                    annotatedClasses.add(new ScannerSearchResult(c, result, elementType));
                                 }
                                 break;
                             }
                             case FIELD: {
-                                if (isAnnotationPresent(annotation, c.getDeclaredFields())) {
-                                    annotatedClasses.add(c);
+                                AccessibleObject result = isAnnotationPresent(annotation, c.getDeclaredFields());
+                                if (result != null) {
+                                    annotatedClasses.add(new ScannerSearchResult(c, result, elementType));
                                 }
                                 break;
                             }
                             case METHOD: {
-                                if (isAnnotationPresent(annotation, c.getDeclaredMethods())) {
-                                    annotatedClasses.add(c);
+                                AccessibleObject result = isAnnotationPresent(annotation, c.getDeclaredMethods());
+                                if (result != null) {
+                                    annotatedClasses.add(new ScannerSearchResult(c, result, elementType));
                                 }
                                 break;
                             }
                             case TYPE: {
-                                if(c.isAnnotationPresent(annotation)){
-                                    annotatedClasses.add(c);
+                                if (c.isAnnotationPresent(annotation)) {
+                                    annotatedClasses.add(new ScannerSearchResult(c, c, elementType));
                                 }
                                 break;
                             }
@@ -75,20 +78,19 @@ public class ClassPathScanner {
                 }
             }
         }
-        System.out.println(annotatedClasses);
     }
 
     private static boolean isInnerClass(String name) {
         return name.contains(INNER_CLASS_SEPARATOR);
     }
 
-    private static boolean isAnnotationPresent(Class<? extends Annotation> clazz, AccessibleObject... accessibleObjects) {
+    private static AccessibleObject isAnnotationPresent(Class<? extends Annotation> clazz, AccessibleObject... accessibleObjects) {
         for (AccessibleObject accessibleObject : accessibleObjects) {
             if (accessibleObject.isAnnotationPresent(clazz)) {
-                return true;
+                return accessibleObject;
             }
         }
-        return false;
+        return null;
     }
 
     private static String formatClassName(String packageName, String fileName) {
@@ -117,6 +119,33 @@ public class ClassPathScanner {
         }
         for (File child : files) {
             recursivelyTraverseFile(child, filePredicate, listToAddResultsTo);
+        }
+    }
+
+    public static class ScannerSearchResult {
+
+        private final Class<?> resultClass;
+        private final Object result;
+        private final ElementType elementType;
+
+        public ScannerSearchResult(Class<?> resultClass, Object result, ElementType elementType) {
+            this.resultClass = resultClass;
+            this.result = result;
+            this.elementType = elementType;
+        }
+
+        /**
+         * @return the result
+         */
+        public Object getResult() {
+            return result;
+        }
+
+        /**
+         * @return the elementType
+         */
+        public ElementType getElementType() {
+            return elementType;
         }
     }
 }
