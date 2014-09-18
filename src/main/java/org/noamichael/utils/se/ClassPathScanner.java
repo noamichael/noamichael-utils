@@ -15,8 +15,7 @@ import java.util.function.Predicate;
  */
 public abstract class ClassPathScanner {
 
-    public static final String CLASS_FOLDER_NAME = "\\classes\\";
-    public static final String FOLDER_SEPARATOR = "\\";
+    public static final String CLASS_FOLDER_NAME= "classes";
     public static final String INNER_CLASS_SEPARATOR = "$";
     public static final String PACKAGE_NAME_SEPARATOR = ".";
     public static final String CLASSPATH_SCANNER_XML = "META-INF/classpath-scanner.xml";
@@ -41,6 +40,7 @@ public abstract class ClassPathScanner {
                 String fullyQualifiedClassName = formatClassName(packageName, foundFile.getName());
                 try {
                     Class c = Class.forName(fullyQualifiedClassName);
+                    System.out.println(fullyQualifiedClassName);
                     for (ElementType elementType : elementTypes) {
                         switch (elementType) {
                             case CONSTRUCTOR: {
@@ -98,10 +98,10 @@ public abstract class ClassPathScanner {
     }
 
     public static String getPackageNameFromPath(String path) {
-        int packageNameStartIndex = path.indexOf(CLASS_FOLDER_NAME) + CLASS_FOLDER_NAME.length();
+        int packageNameStartIndex = path.indexOf(getClassFolderName()) + getClassFolderName().length();
         String pathWithSlashesAndFileName = path.substring(packageNameStartIndex);
-        int endOfPackageName = pathWithSlashesAndFileName.lastIndexOf(FOLDER_SEPARATOR);
-        return pathWithSlashesAndFileName.substring(0, endOfPackageName).replace(FOLDER_SEPARATOR, PACKAGE_NAME_SEPARATOR);
+        int endOfPackageName = pathWithSlashesAndFileName.lastIndexOf(getFileSeparator());
+        return pathWithSlashesAndFileName.substring(0, endOfPackageName).replace(getFileSeparator(), PACKAGE_NAME_SEPARATOR);
 
     }
 
@@ -120,6 +120,13 @@ public abstract class ClassPathScanner {
         for (File child : files) {
             recursivelyTraverseFile(child, filePredicate, listToAddResultsTo);
         }
+    }
+    
+    public static String getFileSeparator(){
+        return System.getProperty("file.separator");
+    }
+    public static String getClassFolderName(){
+        return getFileSeparator() + CLASS_FOLDER_NAME + getFileSeparator();
     }
 
     public static class ScannerSearchResult {
