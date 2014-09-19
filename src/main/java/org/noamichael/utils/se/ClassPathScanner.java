@@ -8,6 +8,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -15,32 +17,57 @@ import java.util.function.Predicate;
  */
 public abstract class ClassPathScanner {
 
-    public static final String CLASS_FOLDER_NAME= "classes";
+    public static final String CLASS_FOLDER_NAME = "classes";
     public static final String INNER_CLASS_SEPARATOR = "$";
     public static final String PACKAGE_NAME_SEPARATOR = ".";
     public static final String CLASSPATH_SCANNER_XML = "META-INF/classpath-scanner.xml";
     public static final Predicate<File> FILE_IS_CLASS = (file) -> file.getName().endsWith(".class");
-
-    public static void scanProjectForAnnotation(Class<? extends Annotation> annotation, ElementType... elementTypes) {
-        URL url = Thread.currentThread().getContextClassLoader().getResource(CLASSPATH_SCANNER_XML);
-        int endOfProjectRootString = url.getFile().indexOf(CLASSPATH_SCANNER_XML);
-        String rootProjectFolder = url.getFile().substring(0, endOfProjectRootString);
-        System.out.println(rootProjectFolder);
-        scanForAnnotationAtFolder(annotation, rootProjectFolder, elementTypes);
+    
+    public static List<ScannerSearchResult> scanForClasses(Predicate<Class> predicate){
+        List<ScannerSearchResult> searchResults = new ArrayList();
+        List<File> foundFiles = new ArrayList();
+        File root = new File(getRootProjectFolder());
+        recursivelyTraverseFile(root, FILE_IS_CLASS, foundFiles);
+        for(File file: foundFiles){
+            String packageName = getPackageNameFromPath(file.getPath());
+            if (!isInnerClass(file.getName())) {
+                try {
+                    String fullyQualifiedClassName = formatClassName(packageName, file.getName());
+                    Class c = Class.forName(fullyQualifiedClassName);
+                    if(predicate.test(c)){
+                        searchResults.add(new ScannerSearchResult(c, c, null));
+                    }
+                } catch (ClassNotFoundException ex) {
+                    Logger.getLogger(ClassPathScanner.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            
+            }
+        }
+        return searchResults;
     }
 
-    public static void scanForAnnotationAtFolder(Class<? extends Annotation> annotation, String startingFolder, ElementType... elementTypes) {
+    public static List<ScannerSearchResult> scanProjectForAnnotation(Class<? extends Annotation> annotation, ElementType... elementTypes) {
+        return scanForAnnotationAtFolder(annotation, getRootProjectFolder(), elementTypes);
+    }
+    
+
+    public static List<ScannerSearchResult> scanForAnnotationAtFolder(Class<? extends Annotation> annotation, String startingFolder, ElementType... elementTypes) {
         File file = new File(startingFolder);
         List<File> foundClassFiles = new ArrayList();
         List<ScannerSearchResult> annotatedClasses = new ArrayList();
         recursivelyTraverseFile(file, FILE_IS_CLASS, foundClassFiles);
+        doScanForAnnotations(foundClassFiles, elementTypes, annotation, annotatedClasses);
+        return annotatedClasses;
+    }
+
+    private static void doScanForAnnotations(List<File> foundClassFiles, ElementType[] elementTypes,
+            Class<? extends Annotation> annotation, List<ScannerSearchResult> annotatedClasses) {
         for (File foundFile : foundClassFiles) {
             String packageName = getPackageNameFromPath(foundFile.getPath());
             if (!isInnerClass(foundFile.getName())) {
                 String fullyQualifiedClassName = formatClassName(packageName, foundFile.getName());
                 try {
                     Class c = Class.forName(fullyQualifiedClassName);
-                    System.out.println(fullyQualifiedClassName);
                     for (ElementType elementType : elementTypes) {
                         switch (elementType) {
                             case CONSTRUCTOR: {
@@ -96,6 +123,13 @@ public abstract class ClassPathScanner {
     private static String formatClassName(String packageName, String fileName) {
         return packageName + PACKAGE_NAME_SEPARATOR + fileName.replace(INNER_CLASS_SEPARATOR, "").replace(".class", "");
     }
+    
+    private static String getRootProjectFolder(){
+        URL url = Thread.currentThread().getContextClassLoader().getResource(CLASSPATH_SCANNER_XML);
+        int endOfProjectRootString = url.getFile().indexOf(CLASSPATH_SCANNER_XML);
+        String rootProjectFolder = url.getFile().substring(0, endOfProjectRootString);
+        return rootProjectFolder;
+    }
 
     public static String getPackageNameFromPath(String path) {
         int packageNameStartIndex = path.indexOf(getClassFolderName()) + getClassFolderName().length();
@@ -121,11 +155,12 @@ public abstract class ClassPathScanner {
             recursivelyTraverseFile(child, filePredicate, listToAddResultsTo);
         }
     }
-    
-    public static String getFileSeparator(){
+
+    public static String getFileSeparator() {
         return System.getProperty("file.separator");
     }
-    public static String getClassFolderName(){
+
+    public static String getClassFolderName() {
         return getFileSeparator() + CLASS_FOLDER_NAME + getFileSeparator();
     }
 
@@ -154,5 +189,15 @@ public abstract class ClassPathScanner {
         public ElementType getElementType() {
             return elementType;
         }
+        
+        public Class<?> getResultClass(){
+            return resultClass;
+        }
+
+        @Override
+        public String toString() {
+            return "ScannerSearchResult{" + "resultClass=" + resultClass + ", result=" + result + ", elementType=" + elementType + '}' +"\n";
+        }
+        
     }
 }
