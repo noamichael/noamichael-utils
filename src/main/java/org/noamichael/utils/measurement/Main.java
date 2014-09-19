@@ -20,8 +20,8 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        List<ScannerSearchResult> results = scanProjectForAnnotation(Test.class, ElementType.CONSTRUCTOR);
-        System.out.println(results.get(0).getResult());
+        List<ScannerSearchResult> results = scanProjectForAnnotation(Test.class, ElementType.values());
+        System.out.println(results);
         //System.out.println(ClassPathScanner.scanForClasses(clazz -> clazz.isInterface()));
     }
 
