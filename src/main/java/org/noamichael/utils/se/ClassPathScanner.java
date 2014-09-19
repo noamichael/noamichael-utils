@@ -7,6 +7,7 @@ import java.lang.reflect.AccessibleObject;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,10 +25,15 @@ public abstract class ClassPathScanner {
     public static final Predicate<File> FILE_IS_CLASS = (file) -> file.getName().endsWith(".class");
     
     public static List<ScannerSearchResult> scanForClasses(Predicate<Class> predicate){
+        return scanForClasses(predicate, null);
+    }
+    
+    public static List<ScannerSearchResult> scanForClasses(Predicate<Class> predicate, Consumer<Class> consumer){
         List<ScannerSearchResult> searchResults = new ArrayList();
         List<File> foundFiles = new ArrayList();
         File root = new File(getRootProjectFolder());
         recursivelyTraverseFile(root, FILE_IS_CLASS, foundFiles);
+        boolean consume = consumer != null;
         for(File file: foundFiles){
             String packageName = getPackageNameFromPath(file.getPath());
             if (!isInnerClass(file.getName())) {
@@ -36,6 +42,9 @@ public abstract class ClassPathScanner {
                     Class c = Class.forName(fullyQualifiedClassName);
                     if(predicate.test(c)){
                         searchResults.add(new ScannerSearchResult(c, c, null));
+                    }
+                    if(consume){
+                        consumer.accept(c);
                     }
                 } catch (ClassNotFoundException ex) {
                     Logger.getLogger(ClassPathScanner.class.getName()).log(Level.SEVERE, null, ex);
@@ -71,22 +80,22 @@ public abstract class ClassPathScanner {
                     for (ElementType elementType : elementTypes) {
                         switch (elementType) {
                             case CONSTRUCTOR: {
-                                AccessibleObject result = isAnnotationPresent(annotation, c.getDeclaredConstructors());
-                                if (result != null) {
+                                List<AccessibleObject> result = isAnnotationPresent(annotation, c.getDeclaredConstructors());
+                                if (!result.isEmpty()) {
                                     annotatedClasses.add(new ScannerSearchResult(c, result, elementType));
                                 }
                                 break;
                             }
                             case FIELD: {
-                                AccessibleObject result = isAnnotationPresent(annotation, c.getDeclaredFields());
-                                if (result != null) {
+                                List<AccessibleObject> result  = isAnnotationPresent(annotation, c.getDeclaredFields());
+                                if (!result.isEmpty()) {
                                     annotatedClasses.add(new ScannerSearchResult(c, result, elementType));
                                 }
                                 break;
                             }
                             case METHOD: {
-                                AccessibleObject result = isAnnotationPresent(annotation, c.getDeclaredMethods());
-                                if (result != null) {
+                                List<AccessibleObject> result  = isAnnotationPresent(annotation, c.getDeclaredMethods());
+                                if (!result.isEmpty()) {
                                     annotatedClasses.add(new ScannerSearchResult(c, result, elementType));
                                 }
                                 break;
@@ -111,13 +120,14 @@ public abstract class ClassPathScanner {
         return name.contains(INNER_CLASS_SEPARATOR);
     }
 
-    private static AccessibleObject isAnnotationPresent(Class<? extends Annotation> clazz, AccessibleObject... accessibleObjects) {
+    private static List<AccessibleObject> isAnnotationPresent(Class<? extends Annotation> clazz, AccessibleObject... accessibleObjects) {
+        List<AccessibleObject> list = new ArrayList<>();
         for (AccessibleObject accessibleObject : accessibleObjects) {
             if (accessibleObject.isAnnotationPresent(clazz)) {
-                return accessibleObject;
+                list.add(accessibleObject);
             }
         }
-        return null;
+        return  list;
     }
 
     private static String formatClassName(String packageName, String fileName) {

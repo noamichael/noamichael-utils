@@ -20,9 +20,9 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        List<ScannerSearchResult> results = scanProjectForAnnotation(Test.class, ElementType.METHOD);
+        List<ScannerSearchResult> results = scanProjectForAnnotation(Test.class, ElementType.CONSTRUCTOR);
         System.out.println(results.get(0).getResult());
-        System.out.println(ClassPathScanner.scanForClasses(clazz -> clazz.isInterface()));
+        //System.out.println(ClassPathScanner.scanForClasses(clazz -> clazz.isInterface()));
     }
 
     @Test

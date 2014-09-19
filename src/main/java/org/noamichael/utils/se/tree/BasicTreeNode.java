@@ -2,6 +2,7 @@ package org.noamichael.utils.se.tree;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.noamichael.utils.measurement.Main.Test;
 
 /**
  *
@@ -13,6 +14,7 @@ public class BasicTreeNode<T> implements TreeNode<T> {
     private TreeNode<?> parent;
     private T data;
 
+    @Test
     public BasicTreeNode() {
         this.children = new ArrayList();
     }
