@@ -32,7 +32,7 @@ public abstract class ClassPathScanner {
      * @param predicate
      * @return
      */
-    public static List<ScannerSearchResult> scanForClasses(Predicate<Class> predicate) {
+    public static List<ScannerSearchResult> scanForClasses(Predicate<Class<?>> predicate) {
         return scanForClasses(predicate, null);
     }
 
@@ -44,7 +44,7 @@ public abstract class ClassPathScanner {
      * @param consumer
      * @return
      */
-    public static List<ScannerSearchResult> scanForClasses(Consumer<Class> consumer) {
+    public static List<ScannerSearchResult> scanForClasses(Consumer<Class<?>> consumer) {
         return scanForClasses(null, consumer);
     }
 
@@ -55,7 +55,7 @@ public abstract class ClassPathScanner {
      * @param consumer
      * @return
      */
-    public static List<ScannerSearchResult> scanForClasses(Predicate<Class> predicate, Consumer<Class> consumer) {
+    public static List<ScannerSearchResult> scanForClasses(Predicate<Class<?>> predicate, Consumer<Class<?>> consumer) {
         List<ScannerSearchResult> searchResults = new ArrayList();
         List<File> foundFiles = new ArrayList();
         File root = new File(getRootProjectFolder());
@@ -89,7 +89,7 @@ public abstract class ClassPathScanner {
      * @param root
      * @return
      */
-    public static List<ScannerSearchResult> scanForClasses(Predicate<Class> predicate, Consumer<Class> consumer, File root) {
+    public static List<ScannerSearchResult> scanForClasses(Predicate<Class<?>> predicate, Consumer<Class<?>> consumer, File root) {
         List<ScannerSearchResult> searchResults = new ArrayList();
         for (File file : root.listFiles()) {
             String packageName = getPackageNameFromPath(file.getPath());
@@ -150,6 +150,15 @@ public abstract class ClassPathScanner {
                         }
                         break;
                     }
+                    case ANNOTATION_TYPE: {
+                        if (clazz.isAnnotation()) {
+                            List<Class<? extends Annotation>> result = isAnnotationPresent(annotation, clazz.getDeclaredAnnotations());
+                            if (!result.isEmpty()) {
+                                annotatedClasses.add(new ScannerSearchResult(clazz, result, elementType));
+                            }
+                        }
+                        break;
+                    }
                     case TYPE: {
                         if (clazz.isAnnotationPresent(annotation)) {
                             annotatedClasses.add(new ScannerSearchResult(clazz, clazz, elementType));
@@ -175,13 +184,23 @@ public abstract class ClassPathScanner {
         return list;
     }
 
+    private static List<Class<? extends Annotation>> isAnnotationPresent(Class<? extends Annotation> clazz, Annotation... annotations) {
+        List<Class<? extends Annotation>> list = new ArrayList<>();
+        for (Annotation annotation : annotations) {
+            if (annotation.annotationType().equals(clazz)) {
+                list.add(annotation.annotationType());
+            }
+        }
+        return list;
+    }
+
     private static String formatClassName(String packageName, String fileName) {
         return packageName + PACKAGE_NAME_SEPARATOR + fileName.replace(INNER_CLASS_SEPARATOR, "").replace(".class", "");
     }
 
     private static String getRootProjectFolder() {
         URL url = Thread.currentThread().getContextClassLoader().getResource(CLASSPATH_SCANNER_XML);
-        if(url == null){
+        if (url == null) {
             throw new RuntimeException("Cannot find " + CLASSPATH_SCANNER_XML);
         }
         int endOfProjectRootString = url.getFile().indexOf(CLASSPATH_SCANNER_XML);
