@@ -18,6 +18,7 @@ import java.util.logging.Logger;
  */
 public abstract class ClassPathScanner {
 
+    public static List<ScannerSearchResult> CACHED_SEARCHES = new ArrayList();
     public static final String CLASS_FOLDER_NAME = "classes";
     public static final String INNER_CLASS_SEPARATOR = "$";
     public static final String PACKAGE_NAME_SEPARATOR = ".";
@@ -113,7 +114,10 @@ public abstract class ClassPathScanner {
     }
 
     public static List<ScannerSearchResult> scanProjectForAnnotation(Class<? extends Annotation> annotation, ElementType... elementTypes) {
-        return scanForAnnotationAtFolder(annotation, getRootProjectFolder(), elementTypes);
+        if (CACHED_SEARCHES.isEmpty()) {
+            CACHED_SEARCHES = scanForAnnotationAtFolder(annotation, getRootProjectFolder(), elementTypes);
+        }
+        return CACHED_SEARCHES;
     }
 
     public static List<ScannerSearchResult> scanForAnnotationAtFolder(Class<? extends Annotation> annotation, String startingFolder, ElementType... elementTypes) {
