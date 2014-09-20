@@ -33,6 +33,18 @@ public class ObjectUtil {
             return null;
         }
     }
+    public static Object newUnknownInstance(Class<?> clazz) {
+        try {
+            return clazz.getConstructor().newInstance();
+        } catch (IllegalAccessException |
+                IllegalArgumentException |
+                InstantiationException |
+                NoSuchMethodException |
+                SecurityException |
+                InvocationTargetException ex) {
+            return null;
+        }
+    }
 
     /**
      * A method to find all of the changed fields between two object.

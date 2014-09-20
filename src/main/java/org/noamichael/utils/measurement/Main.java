@@ -4,7 +4,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
-import org.noamichael.utils.se.ClassPathScanner;
 import org.noamichael.utils.se.ClassPathScanner.ScannerSearchResult;
 import static org.noamichael.utils.se.ClassPathScanner.scanProjectForAnnotation;
 import org.noamichael.utils.xml.api.XmlElement;
@@ -19,7 +18,7 @@ public class Main {
     public @interface Test {
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) {     
         List<ScannerSearchResult> results = scanProjectForAnnotation(Test.class, ElementType.values());
         System.out.println(results);
         //System.out.println(ClassPathScanner.scanForClasses(clazz -> clazz.isInterface()));

@@ -67,7 +67,7 @@ public abstract class ClassPathScanner {
                     String fullyQualifiedClassName = formatClassName(packageName, file.getName());
                     Class c = Class.forName(fullyQualifiedClassName);
                     if (predicate != null && predicate.test(c)) {
-                        searchResults.add(new ScannerSearchResult(c, c, null));
+                        searchResults.add(new ScannerSearchResult(c, c, ElementType.TYPE));
                     }
                     if (consumer != null) {
                         consumer.accept(c);
@@ -181,6 +181,9 @@ public abstract class ClassPathScanner {
 
     private static String getRootProjectFolder() {
         URL url = Thread.currentThread().getContextClassLoader().getResource(CLASSPATH_SCANNER_XML);
+        if(url == null){
+            throw new RuntimeException("Cannot find " + CLASSPATH_SCANNER_XML);
+        }
         int endOfProjectRootString = url.getFile().indexOf(CLASSPATH_SCANNER_XML);
         String rootProjectFolder = url.getFile().substring(0, endOfProjectRootString);
         return rootProjectFolder;
@@ -251,7 +254,7 @@ public abstract class ClassPathScanner {
 
         @Override
         public String toString() {
-            return "\nScannerSearchResult{" + "resultClass=" + resultClass + ", result=" + result + ", elementType=" + elementType + '}' + "\n";
+            return "ScannerSearchResult{" + "resultClass=" + resultClass + ", result=" + result + ", elementType=" + elementType + '}';
         }
 
     }
