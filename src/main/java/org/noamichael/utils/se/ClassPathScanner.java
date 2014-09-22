@@ -18,11 +18,30 @@ import java.util.logging.Logger;
  */
 public abstract class ClassPathScanner {
 
-    public static List<ScannerSearchResult> CACHED_SEARCHES = new ArrayList();
+    /**
+     * When searching all the entire project for classes, cache results.
+     */
+    private static List<ScannerSearchResult> CACHED_SEARCHES = new ArrayList();
+    /**
+     * The folder under which classes reside
+     */
     public static final String CLASS_FOLDER_NAME = "classes";
+    /**
+     * The character which separates inner classes from parent class.
+     */
     public static final String INNER_CLASS_SEPARATOR = "$";
+    /**
+     * The character which separates each folder of a package.
+     */
     public static final String PACKAGE_NAME_SEPARATOR = ".";
+    /**
+     * The XML file used for location reference when scanning.
+     */
     public static final String CLASSPATH_SCANNER_XML = "META-INF/classpath-scanner.xml";
+    /**
+     * A predicate for determining whether a file is a {@link Class}.
+     * (Extension)
+     */
     public static final Predicate<File> FILE_IS_CLASS = (file) -> file.getName().endsWith(".class");
 
     /**
@@ -83,7 +102,7 @@ public abstract class ClassPathScanner {
     }
 
     /**
-     * Scans for classes at the given file
+     * Scans for classes at starting at the given {@link File folder}
      *
      * @param predicate
      * @param consumer
@@ -113,6 +132,13 @@ public abstract class ClassPathScanner {
         return searchResults;
     }
 
+    /**
+     * Scans a project for objects which are annotated with the given annotation
+     *
+     * @param annotation The annotation to search for
+     * @param elementTypes The elements where to search on
+     * @return
+     */
     public static List<ScannerSearchResult> scanProjectForAnnotation(Class<? extends Annotation> annotation, ElementType... elementTypes) {
         if (CACHED_SEARCHES.isEmpty()) {
             CACHED_SEARCHES = scanForAnnotationAtFolder(annotation, getRootProjectFolder(), elementTypes);
@@ -120,6 +146,15 @@ public abstract class ClassPathScanner {
         return CACHED_SEARCHES;
     }
 
+    /**
+     * Scans a folder/subfolder for objects which are annotated with the given
+     * annotation
+     *
+     * @param annotation The annotation to search for
+     * @param startingFolder
+     * @param elementTypes The elements where to search on
+     * @return
+     */
     public static List<ScannerSearchResult> scanForAnnotationAtFolder(Class<? extends Annotation> annotation, String startingFolder, ElementType... elementTypes) {
         File file = new File(startingFolder);
         List<File> foundClassFiles = new ArrayList();
@@ -129,8 +164,15 @@ public abstract class ClassPathScanner {
         return annotatedClasses;
     }
 
+    /**
+     * Performs the actually scan for annotations
+     *
+     * @param annotation
+     * @param elementTypes
+     * @param annotatedClasses
+     */
     private static void doScanForAnnotations(Class<? extends Annotation> annotation, ElementType[] elementTypes, List<ScannerSearchResult> annotatedClasses) {
-        scanForClasses(clazz -> {
+        scanForClasses((Consumer<Class<?>>) clazz -> {
             for (ElementType elementType : elementTypes) {
                 switch (elementType) {
                     case CONSTRUCTOR: {
@@ -174,10 +216,25 @@ public abstract class ClassPathScanner {
         });
     }
 
+    /**
+     * Returns true if the class name contains the
+     * {@link #INNER_CLASS_SEPARATOR}
+     *
+     * @param name
+     * @return
+     */
     private static boolean isInnerClass(String name) {
         return name.contains(INNER_CLASS_SEPARATOR);
     }
 
+    /**
+     * Returns a list of all {@link AccessibleObject} where the annotation is
+     * present.
+     *
+     * @param clazz The annotation
+     * @param accessibleObjects The array of {@link AccessibleObject} to scan
+     * @return
+     */
     private static List<AccessibleObject> isAnnotationPresent(Class<? extends Annotation> clazz, AccessibleObject... accessibleObjects) {
         List<AccessibleObject> list = new ArrayList<>();
         for (AccessibleObject accessibleObject : accessibleObjects) {
@@ -188,6 +245,14 @@ public abstract class ClassPathScanner {
         return list;
     }
 
+    /**
+     * Returns a list of all annotation classes who have the given annotation
+     * present.
+     *
+     * @param clazz
+     * @param annotations
+     * @return
+     */
     private static List<Class<? extends Annotation>> isAnnotationPresent(Class<? extends Annotation> clazz, Annotation... annotations) {
         List<Class<? extends Annotation>> list = new ArrayList<>();
         for (Annotation annotation : annotations) {
@@ -198,10 +263,24 @@ public abstract class ClassPathScanner {
         return list;
     }
 
+    /**
+     * Formats the path of a class with the name of the class to make the fully
+     * qualified class name.
+     *
+     * @param packageName
+     * @param fileName
+     * @return
+     */
     private static String formatClassName(String packageName, String fileName) {
         return packageName + PACKAGE_NAME_SEPARATOR + fileName.replace(INNER_CLASS_SEPARATOR, "").replace(".class", "");
     }
 
+    /**
+     * Finds the root project folder if the required XML file
+     * ({@link #CLASSPATH_SCANNER_XML}) is present.
+     *
+     * @return
+     */
     private static String getRootProjectFolder() {
         URL url = Thread.currentThread().getContextClassLoader().getResource(CLASSPATH_SCANNER_XML);
         if (url == null) {
@@ -212,6 +291,12 @@ public abstract class ClassPathScanner {
         return rootProjectFolder;
     }
 
+    /**
+     * Converts a path into a package name
+     *
+     * @param path
+     * @return
+     */
     public static String getPackageNameFromPath(String path) {
         int packageNameStartIndex = path.indexOf(getClassFolderName()) + getClassFolderName().length();
         String pathWithSlashesAndFileName = path.substring(packageNameStartIndex);
@@ -220,6 +305,15 @@ public abstract class ClassPathScanner {
 
     }
 
+    /**
+     * Recursively traverses a file structure and adds the current file to the
+     * given list of results if it passes the predicate.
+     *
+     * @param file The starting file.
+     * @param filePredicate The predicate to test against
+     * @param listToAddResultsTo The instantiated list to add results to
+     * @throws NullPointerException if the list of results is null
+     */
     public static void recursivelyTraverseFile(File file, Predicate<File> filePredicate, List<File> listToAddResultsTo) {
         if (file == null) {
             return;
@@ -237,18 +331,41 @@ public abstract class ClassPathScanner {
         }
     }
 
+    /**
+     * Returns the system file system.
+     *
+     * @return
+     */
     public static String getFileSeparator() {
         return System.getProperty("file.separator");
     }
 
+    /**
+     * Get the name of the folder (with the file separator) where classes are
+     * housed.
+     *
+     * @return
+     */
     public static String getClassFolderName() {
         return getFileSeparator() + CLASS_FOLDER_NAME + getFileSeparator();
     }
 
+    /**
+     * A class which holds the information surrounding the result of a search
+     */
     public static class ScannerSearchResult {
 
+        /**
+         * The class of where the result was found
+         */
         private final Class<?> resultClass;
+        /**
+         * The result of the search
+         */
         private final Object result;
+        /**
+         * The {@link ElementType} of the result
+         */
         private final ElementType elementType;
 
         public ScannerSearchResult(Class<?> resultClass, Object result, ElementType elementType) {
