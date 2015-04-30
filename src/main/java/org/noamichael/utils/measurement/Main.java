@@ -1,11 +1,11 @@
 package org.noamichael.utils.measurement;
 
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.List;
-import org.noamichael.utils.se.ClassPathScanner.ScannerSearchResult;
-import static org.noamichael.utils.se.ClassPathScanner.scanProjectForAnnotation;
+import java.util.regex.Pattern;
+import org.noamichael.utils.regex.RegexBuilder;
+import org.noamichael.utils.regex.RegexExpression;
+import org.noamichael.utils.regex.SimpleRegexBuilder;
 import org.noamichael.utils.xml.api.XmlElement;
 
 /**
@@ -18,10 +18,19 @@ public class Main {
     public @interface Test {
     }
 
-    public static void main(String[] args) {     
-        List<ScannerSearchResult> results = scanProjectForAnnotation(Test.class, ElementType.values());
-        System.out.println(results);
-        //System.out.println(ClassPathScanner.scanForClasses(clazz -> clazz.isInterface()));
+    public static void main(String[] args) {
+        RegexBuilder builder = new SimpleRegexBuilder();
+        builder.startString()
+                .exactly(3, RegexExpression.NUMBER)
+                .exactly("-")
+                .exactly(3, RegexExpression.NUMBER)
+                .exactly("-")
+                .exactly(4, RegexExpression.NUMBER)
+                .endString();
+        System.out.println("Regex:" + builder.buildToString());
+        Pattern pattern = builder.build();
+        System.out.println("Trying 123-231-2312:" + pattern.matcher("123-231-2312").matches());
+        System.out.println("Trying 123-2331-2312:" + pattern.matcher("123-2331-2312").matches());
     }
 
     @Test
